@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>[ ＢＬＡＣＫ • ＲＯＳＥ ] - The Locked Vault</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Playfair+Display:ital,wght@0,600;1,400&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* =========================================================
+       1. GLOBAL THEME & CANVAS
+       ========================================================= */
+    :root {
+      --bg-dark: #040106;
+      --accent-pink: #ff2a70;
+      --accent-glow: rgba(255, 42, 112, 0.4);
+      --purple-deep: #190628;
+      --text-bright: #ffffff;
+      --text-dim: #b39ddb;
+      --envelope-bg: #12061c;
+      --envelope-border: rgba(255, 42, 112, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+    }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text-bright);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Falling Petals Canvas */
+    #petals-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Neon Lighting State */
+    body.neon-mode {
+      --accent-glow: rgba(255, 42, 112, 0.85);
+      --envelope-border: rgba(255, 42, 112, 0.8);
+      background: radial-gradient(circle at center, #1f0730 0%, #040106 100%);
+    }
+
+    /* =========================================================
+       2. INTERACTIVE PULL-CORD (حبل الإضاءة السحري)
+       ========================================================= */
+    .pull-cord {
+      position: fixed;
+      top: 0;
+      right: 8%;
+      z-index: 9999;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform-origin: top center;
+      animation: cordSway 3.5s infinite ease-in-out;
+    }
+
+    .cord-line {
+      width: 3px;
+      height: 110px;
+      background: linear-gradient(to bottom, #333, var(--accent-pink));
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .cord-knob {
+      width: 24px;
+      height: 24px;
+      background: var(--accent-pink);
+      border-radius: 50%;
+      border: 3px solid #fff;
+      box-shadow: 0 0 15px var(--accent-pink);
+    }
+
+    @keyframes cordSway {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(4deg); }
+    }
+
+    /* =========================================================
+       3. GATEKEEPER LOCK SCREEN (شاشة الدخول الرئيسية)
+       ========================================================= */
+    #gate-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(3, 1, 5, 0.96);
+      backdrop-filter: blur(25px);
+      z-index: 999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      transition: all 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    .gate-vault {
+      background: var(--envelope-bg);
+      border: 1px solid var(--envelope-border);
+      border-radius: 30px;
+      padding: 45px 30px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.9), 0 0 30px var(--accent-glow);
+      position: relative;
+    }
+
+    .gate-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .gate-sub {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 25px;
+    }
+
+    .pass-field {
+      width: 100%;
+      padding: 15px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--envelope-border);
+      color: #fff;
+      font-size: 1.3rem;
+      text-align: center;
+      letter-spacing: 6px;
+      outline: none;
+      margin-bottom: 18px;
+      transition: all 0.3s;
+    }
+
+    .pass-field:focus {
+      border-color: var(--accent-pink);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .unlock-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 14px;
+      border: none;
+      background: var(--accent-pink);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 8px 25px var(--accent-glow);
+      transition: transform 0.2s ease;
+    }
+
+    .unlock-btn:hover {
+      transform: scale(1.02);
+    }
+
+    .error-msg {
+      color: var(--accent-pink);
+      font-size: 0.8rem;
+      margin-top: 12px;
+      display: none;
+    }
+
+    /* =========================================================
+       4. MAIN VAULT CONTENT
+       ========================================================= */
+    .vault-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 70px 20px;
+      position: relative;
+      z-index: 1;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 1s ease;
+    }
+
+    .vault-container.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      letter-spacing: 3px;
+      background: linear-gradient(180deg, #fff 0%, var(--text-dim) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+
+    /* Secret Envelopes Grid */
+    .envelopes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 35px;
+    }
+
+    /* 3D Envelope Card Design */
+    .secret-envelope {
+      background: linear-gradient(145deg, #180826 0%, #0d0317 100%);
+      border: 1px solid var(--envelope-border);
+      border-radius: 22px;
+      height: 240px;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .secret-envelope:hover {
+      transform: translateY(-10px) scale(1.02);
+      border-color: var(--accent-pink);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.8), 0 0 30px var(--accent-glow);
+    }
+
+    /* Envelope Top Flap Silhouette */
+    .secret-envelope::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 0;
+      border-left: 170px solid transparent;
+      border-right: 170px solid transparent;
+      border-top: 100px solid rgba(255, 42, 112, 0.08);
+      transition: transform 0.4s ease;
+    }
+
+    /* Envelope Wax Seal Stamp */
+    .envelope-seal {
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, #ff2a70 0%, #800028 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6), 0 0 15px var(--accent-glow);
+      margin-bottom: 12px;
+      z-index: 2;
+      transition: transform 0.3s;
+    }
+
+    .secret-envelope:hover .envelope-seal {
+      transform: scale(1.15) rotate(10deg);
+    }
+
+    .envelope-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: 2px;
+      z-index: 2;
+    }
+
+    .envelope-hint {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      z-index: 2;
+    }
+
+    /* انيميشن تقطيع الظرف عند الدبل كليك */
+    .secret-envelope.tearing {
+      animation: tearAnimation 0.5s forwards ease-in-out;
+    }
+
+    @keyframes tearAnimation {
+      0% { transform: scale(1) rotate(0deg); }
+      20% { transform: scale(1.05) rotate(-3deg); border-color: var(--accent-pink); }
+      40% { transform: scale(0.95) rotate(3deg); }
+      70% { transform: scale(1.08) rotate(-1deg); opacity: 0.7; filter: blur(1px); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0); }
+    }
+
+    /* =========================================================
+       5. UNFOLDING LETTER MODAL (الرسالة المتحركة)
+       ========================================================= */
+    .letter-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 0, 4, 0.93);
+      backdrop-filter: blur(25px);
+      z-index: 999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.5s ease;
+    }
+
+    .letter-modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .unfolded-paper {
+      background: #150721;
+      border: 1px solid var(--envelope-border);
+      border-radius: 26px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 35px;
+      position: relative;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 40px var(--accent-glow);
+      transform: scale(0.85) translateY(40px);
+      transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      text-align: right;
+    }
+
+    /* Customized Scrollbar for long text */
+    .unfolded-paper::-webkit-scrollbar {
+      width: 6px;
+    }
+    .unfolded-paper::-webkit-scrollbar-thumb {
+      background: var(--accent-pink);
+      border-radius: 10px;
+    }
+
+    .letter-modal-overlay.active .unfolded-paper {
+      transform: scale(1) translateY(0);
+    }
+
+    .close-paper-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--envelope-border);
+      color: #fff;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .close-paper-btn:hover {
+      background: var(--accent-pink);
+    }
+
+    .revealed-img {
+      width: 100%;
+      height: 340px;
+      object-fit: cover;
+      border-radius: 18px;
+      margin-bottom: 22px;
+      border: 1px solid var(--envelope-border);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .revealed-title {
+      font-size: 1.5rem;
+      color: #fff;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .revealed-text {
+      font-family: 'Amiri', serif;
+      font-size: 1.15rem;
+      line-height: 2.2;
+      color: var(--text-bright);
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Petals Canvas -->
+  <canvas id="petals-canvas"></canvas>
+
+  <!-- Interactive Pull Cord -->
+  <div class="pull-cord" onclick="toggleGlow()" title="اسحب لتشغيل وضع النيون">
+    <div class="cord-line"></div>
+    <div class="cord-knob"></div>
+  </div>
+
+  <!-- =========================================================
+       1. GATEKEEPER LOCK SCREEN
+       ========================================================= -->
+  <div id="gate-screen">
+    <div class="gate-vault">
+      <div class="envelope-seal" style="margin: 0 auto 20px auto;">🗝️</div>
+      <h2 class="gate-title">[ ＢＬＡＣＫ • ＲＯＳＥ ]</h2>
+      <p class="gate-sub">أدخلي كلمة السر لفك أختام الخزنة السرية ✨</p>
+      
+      <input type="password" id="gate-pass" class="pass-field" placeholder="••••••••" onkeypress="checkGateKey(event)">
+      <button class="unlock-btn" onclick="unlockGate()">فك الخزنة ✨</button>
+      <p class="error-msg" id="gate-error">كلمة السر غير صحيحة، جربي تاني يا روزي ❤️</p>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       2. MAIN SECRET VAULT
+       ========================================================= -->
+  <div class="vault-container" id="vault-main">
+    <header>
+      <h1>[ ＢＬＡＣＫ • ＲＯＳＥ ]</h1>
+      <p>أظرف الذكريات السرية المغلقة ✨ اضغطي مرتين (Double Click) على أي ظرف لقطع الشمع وفتحه</p>
+    </header>
+
+    <!-- Envelopes Grid -->
+    <div class="envelopes-grid">
+
+      <!-- Envelope 1 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret1')" ondblclick="triggerTearAndOpen(this, 'secret1')">
+        <div class="envelope-seal">🌹</div>
+        <div class="envelope-number">SECRET ENVELOPE 01</div>
+        <div class="envelope-hint" id="hint-secret1">أمنيات الـ 11:11 ✨</div>
+      </div>
+
+      <!-- Envelope 2 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret2')" ondblclick="triggerTearAndOpen(this, 'secret2')">
+        <div class="envelope-seal">👁️</div>
+        <div class="envelope-number">SECRET ENVELOPE 02</div>
+        <div class="envelope-hint" id="hint-secret2">سحر النظرات والتفاصيل ✨</div>
+      </div>
+
+      <!-- Envelope 3 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret3')" ondblclick="triggerTearAndOpen(this, 'secret3')">
+        <div class="envelope-seal">🤝</div>
+        <div class="envelope-number">SECRET ENVELOPE 03</div>
+        <div class="envelope-hint" id="hint-secret3">ملاذ الأمان والمأمن ✨</div>
+      </div>
+
+      <!-- Envelope 4 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret4')" ondblclick="triggerTearAndOpen(this, 'secret4')">
+        <div class="envelope-seal">🤪</div>
+        <div class="envelope-number">SECRET ENVELOPE 04</div>
+        <div class="envelope-hint" id="hint-secret4">عالم الجنان والفرفشة ✨</div>
+      </div>
+
+      <!-- Envelope 5 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret5')" ondblclick="triggerTearAndOpen(this, 'secret5')">
+        <div class="envelope-seal">📸</div>
+        <div class="envelope-number">SECRET ENVELOPE 05</div>
+        <div class="envelope-hint" id="hint-secret5">الذكرى الموثقة سوا ✨</div>
+      </div>
+
+      <!-- Envelope 6 -->
+      <div class="secret-envelope" onclick="handleEnvelopeClick(this, 'secret6')" ondblclick="triggerTearAndOpen(this, 'secret6')">
+        <div class="envelope-seal">💎</div>
+        <div class="envelope-number">SECRET ENVELOPE 06</div>
+        <div class="envelope-hint" id="hint-secret6">الرسالة الخاتمة والخاصة جداً ✨</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================
+       3. UNFOLDED LETTER MODAL
+       ========================================================= -->
+  <div class="letter-modal-overlay" id="letter-overlay" onclick="closeLetterOuter(event)">
+    <div class="unfolded-paper">
+      <button class="close-paper-btn" onclick="closeLetter()">✕</button>
+      <img id="revealed-img" class="revealed-img" src="" alt="Memory Picture">
+      <h3 id="revealed-title" class="revealed-title"></h3>
+      <p id="revealed-text" class="revealed-text"></p>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       4. JAVASCRIPT & ANIMATION ENGINES
+       ========================================================= -->
+  <script>
+    const secretData = {
+      secret1: {
+        title: "رسالة الظرف الأول: أمنيات الـ 11:11 ✨",
+        img: "img1.jpg",
+        text: `11:11, and every single wish is just you. ✨\n\nعارفة يا روزي؟ من بين كل الساعات والأوقات واللحظات اللي بتعدي عليا في اليوم، اللحظة دي بالذات (11:11) ليها مكانة خاصة جداً في قلبي ومش مجرد دقيقة بتعدي على الساعة والسلام.\n\nكل ما الدقايق تظبط وتيجي الساعة 11:11، بوقف كل حاجة في إيدي وبغمض عيني وبطلب من ربنا نفس الأمنية ومش بغيرها أبداً.. بطلب إنه يحفظك ليا، ويخليكي دايماً منورة حياتي وواقفة جنبي في كل خطوة.\n\nإنتي مش مجرد شخص في حياتي، إنتي الأمنية اللي اتمنيتها وربنا استجاب لها ورزقني بيها، وبقيت بفتكر دايماً إن وجودك في حد ذاته أكبر نعمة ممكن إنسان يتمناها.\n\nلما ببص لربنا وبدعيه في اللحظات دي، بيكون كل همي إن الابتسامة دي تفضل مرسومة على وشك، وإن العيون الجميلة دي مشوفش فيها أي حزن أو زعل أبداً.\n\nالساعة بتعدي والأيام بتجري، بس إحساسي باللحظة دي بيزيد ومش بيبهت، لأن كل ثانية بتعدي وإنتي فيها معايا بتخليني متأكد إن العوض الحقيقي من ربنا هو إنتي.\n\nمهما تمنيت ومهما طلبت، هيفضل وجودك هو الأمنية الأولى والأخيرة اللي مش هبطل أدعي بيها في كل 11:11 وفي كل وقت.`
+      },
+      secret2: {
+        title: "رسالة الظرف الثاني: سحر النظرات والتفاصيل 👁️✨",
+        img: "img2.jpg",
+        text: `"The eyes, chico. They never lie." 🖤\n\nالعيون فعلاً عمرها ما بتكذب، وفي الصورة دي والتفاصيل دي بالذات، كل نظرة كان فيها مجلدات وكلام كتير أوي مش محتاج حتى نطلعه بالحروف أو نقوله بالصوت.\n\nأول ما ببص في عينيكي بشوف العالم بتاعي كله انعكاس جواهم. بشوف الأمان اللي كنت بدور عليه من زمان، وبشوف الهدوء اللي بيخليني أنسى أي تعب أو توتر في الدنيا.\n\nالنظرة دي بتفكرني بإن الأحاسيس الصادقة بتوصل من غير مجهود، وبإننا مش محتاجين نتكلم كتير عشان نفهم بعض.. كفاية بس إننا نبص لبعض عشان كل التفاصيل والأفكار تنكشف وتتفهم على طول.\n\nعينيكي ليها لغة خاصة ومحدش في العالم كله يقدر يفهمها غيري، لغة مليانة حنية ودغدغة للمشاعر وبيتناغم فيها الحب مع الأمان بشكل مش طبيعي.\n\nفي كل مرة بتيجي عينيا في عينيكي، بحس إن الزمن بيقف لثواني، وإن الناس واللي حوليننا بيختفوا وبيبقى فاضل بس أنا وإنتي والنظرة دي.\n\nمهما الأيام غيرت في حاجات حوالينا، هتفضل النظرة دي هي الملاذ الحقيقي والسر اللي بيننا اللي محدش يقدر ياخده مننا.`
+      },
+      secret3: {
+        title: "رسالة الظرف الثالث: ملاذ الأمان والمأمن 🤝❤️",
+        img: "img3.jpg",
+        text: `Safe Place & Holding hands, holding on to forever. 🤝❤️\n\nمسكة الإيد دي بالنسبة لي مش مجرد حركة عادية أو صورة بنصورها عشان الذكرى.. دي إحساس كامل وممتد بالطمأنينة والأمان والمستقبل اللي بنبنيه سوا.\n\nلما بنمسك إيد بعض، بحس إن كل الضغوط والمشاكل والحروب اللي في العالم برة بتتلاشى فوراً، وبحس إن الطاقة الإيجابية كلها بدأت تتسرب لقلبي.\n\nبحس إن إيديكي هي المأمن والملاذ الوحيد لقلبي، المكان اللي بقدر أكون فيه على طبيعتي من غير تصنع أو خوف أو قلق من أي حاجة.\n\nMy favorite hand to hold forever.. هفضل ماسك في إيديكي ومحافظ عليها ولا آخر يوم في عمري، ومش هسمح لأي حاجة في الدنيا دي إنها تبعدنا أو تخلينا نسيب بعض.\n\nمسكة الإيد دي هي الوعد الصامت بيننا، الوعد إننا نفضل سند لبعض في الحلوة والمرة، وفي الأوقات الصعبة قبل الأوقات الحلوة.\n\nكل صباع بيمسك في التاني بيقول قصّة طويلة من الحب والدعم، وبيقول إن طول ما إيدينا في إيدين بعض، مفيش أي حاجة في العالم ده تقدر تكسرنا أو تقف في طريقنا.`
+      },
+      secret4: {
+        title: "رسالة الظرف الرابع: عالم الجنان والفرفشة 🤪💥",
+        img: "img4.jpg",
+        text: `Match my freak! Partners in chaos. 🤪✨\n\nSerious isn't really our thing! الجد مش بتاعنا أوي، وأحلى حاجة في علاقتنا وحياتنا سوا إننا بنعرف نكون مجانين ونضحك من قلبنا بدون تكلف أو تصنع أو خوف من كلام الناس.\n\nالصورة دي بالفلتر المضحك والكيوت ده بتلخص كمية الضحك والفرحة والطاقة العالية اللي بنعيشها سوا، وبتفكرني بأيام وساعات قضيناها بنضحك على أبسط الحاجات وأتفاه الأسباب.\n\nإنتي مش بس حبيبتي، إنتي الشريكة في الجنان وفي كل اللحظات الفرفوشة اللي بتخلي الحياة أسهل وأخف على القلب.\n\nمعاكي انتي بس بقدر أطلع الطفل اللي جوايا، وبقدر أعمل حاجات مجنونة ومهيبة ومش منطقية من غير ما أخاف إنك تتريقي عليا، لأنك ببساطة بتعمليها معايا وأجنن مني كمان!\n\nعالمنا الخاص المليان بالضحك والجنان ده هو اللي بيميزنا، وهو اللي بيخلي كل يوم نعيشه سوا فيه طعم جديد وفرحة غير مكررة.\n\nهنفضل دايماً Partners in chaos، نضحك وننهزر ونكسر الروتين، ونعيش كل لحظة بجنان حقيقي بيجدد روحنا وبيخلي الحب بيننا دايماً شباب ودمه خفيف.`
+      },
+      secret5: {
+        title: "رسالة الظرف الخامس: الذكرى الموثقة سوا 📸❤️",
+        img: "img5.jpg",
+        text: `My favorite human & Better together. 📸❤️\n\nالصورة السيلفي دي ليها معزة خاصة جداً في قلبي، وكل ما بفتحها وبشوفها بتلقائية شديدة ببتسم وبفتكر تفاصيل اليوم ده وكان ماشي إزاي من أوله لآخره.\n\nأجمل حاجة في صور السيلفي إنها بتلقط اللحظة الحقيقية ومش بتجامل، وبتحفظ الفرحة والضحكة الصافية للأبد عشان نرجع لها في أي وقت ونفتكر حلو الأيام.\n\nوفي الصورة دي بالذات، واضح جداً قد إيه إحنا بيننا كيمياء وتفاهم مش عند أي حد تاني، واضح قد إيه إحنا متكملين وبنكمل بعض في كل التفاصيل الصغيرة والكبيرة.\n\nإنتي الشخص المفضل لقلبي (My favorite human)، الشخص اللي بفرح جداً وأنا بتصور معاه وببقى عاوز أوقف الزمن عشان اللحظة دي ماتخلصش بسرعة.\n\nالصور دي مش مجرد ملفات أو بكسلات على شاشة، دي أجزاء من روحنا وحياتنا اتجمعت سوا عشان تبني ألبوم ذكريات مش بيتنسى.\n\nوكل صورة جديدة بنصورها سوا بتأكدلي الحقيقة الملموسة: إننا فعلاً Better together، وإن الحياة ألوانها أحلى بكتير وإنتي موجودة فيها معايا.`
+      },
+      secret6: {
+        title: "رسالة الظرف السادس: الخاتمة والجوهرة الخاصة 🌹✨",
+        img: "img6.jpg",
+        text: `Saved the best for last. Just us, always. 🌹✨\n\nEnding the recap with the best one! الظرف السادس والصورة الأخيرة دي اتسابت في الآخر عشان تكون هي الخاتمة والجوهرة الخاصة بالقصة كلها والسر الأعمق في الخزنة دي.\n\nالصورة دي بتلخص رحلتنا وكل حاجة مرت علينا، بتلخص السهر والضحك والمشاعر الصادقة وكل خطوة مشيناها سوا من بداية معرفتنا لحد اللحظة دي.\n\nبتثبت إن بعد كل الكلام واللحظات والذكريات، القواعد الثابتة في حياتنا مبتتغيرش: إننا إحنا الاتنين ملك لبعض، وأن مفيش حاجة تقوى على تفريقنا.\n\nروزي.. إنتي المشوار والأمل والمستقبل، إنتي الوردة السوداء النادرة اللي ملهاش بديل في الدنيا كلها، واللي بعتز بوجودها في حياتي أكتر من أي حاجة تاني.\n\nمهما كتبت من كلمات ومهما حكيت من تفاصيل، السطور والأظرف مش هتكفي الإحساس الحقيقي اللي جوايا ناحيتك، بس الخزنة دي هتفضل شاهدة على الحب ده.\n\nSaved the best for last.. Just us, always and forever. بحبك يا روزي يا أحلى وأغلى حاجة في حياتي كلها! ❤️`
+      }
+    };
+
+    /* Gatekeeper Function */
+    function unlockGate() {
+      const input = document.getElementById('gate-pass').value.trim();
+      const screen = document.getElementById('gate-screen');
+      const main = document.getElementById('vault-main');
+      const err = document.getElementById('gate-error');
+
+      if (input === "104107") {
+        screen.style.opacity = '0';
+        screen.style.visibility = 'hidden';
+        main.classList.add('active');
+      } else {
+        err.style.display = 'block';
+      }
+    }
+
+    function checkGateKey(e) {
+      if (e.key === 'Enter') unlockGate();
+    }
+
+    function toggleGlow() {
+      document.body.classList.toggle('neon-mode');
+    }
+
+    /* Envelope Double Click Logic */
+    let clickTimer = null;
+
+    function handleEnvelopeClick(element, key) {
+      if (clickTimer === null) {
+        clickTimer = setTimeout(() => {
+          clickTimer = null;
+          // تلميح عند الضغطة الواحدة
+          const hintElement = document.getElementById('hint-' + key);
+          if (hintElement) {
+            const originalText = hintElement.innerText;
+            hintElement.innerText = "اضغطي مرتين لقطع الشمع ✂️";
+            setTimeout(() => { hintElement.innerText = originalText; }, 1500);
+          }
+        }, 250);
+      }
+    }
+
+    function triggerTearAndOpen(element, key) {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+      }
+      
+      // أنيميشن التقطيع
+      element.classList.add('tearing');
+      
+      setTimeout(() => {
+        element.classList.remove('tearing');
+        openSecretLetter(key);
+      }, 450);
+    }
+
+    /* Modal Open & Close */
+    function openSecretLetter(key) {
+      const data = secretData[key];
+      if (!data) return;
+
+      document.getElementById('revealed-img').src = data.img;
+      document.getElementById('revealed-title').innerText = data.title;
+      document.getElementById('revealed-text').innerText = data.text;
+
+      document.getElementById('letter-overlay').classList.add('active');
+    }
+
+    function closeLetter() {
+      document.getElementById('letter-overlay').classList.remove('active');
+    }
+
+    function closeLetterOuter(e) {
+      if (e.target.id === 'letter-overlay') closeLetter();
+    }
+
+    /* =========================================================
+       FALLING PETALS CANVAS ENGINE
+       ========================================================= */
+    const canvas = document.getElementById('petals-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const petals = Array.from({ length: 30 }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height - height,
+      size: Math.random() * 8 + 5,
+      speedY: Math.random() * 1.5 + 0.8,
+      speedX: Math.random() * 1 - 0.5,
+      opacity: Math.random() * 0.6 + 0.2,
+      color: Math.random() > 0.5 ? '#ff2a70' : '#8b5cf6'
+    }));
+
+    function animatePetals() {
+      ctx.clearRect(0, 0, width, height);
+
+      petals.forEach(p => {
+        p.y += p.speedY;
+        p.x += p.speedX;
+
+        if (p.y > height) {
+          p.y = -20;
+          p.x = Math.random() * width;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity;
+        ctx.fill();
+      });
+
+      requestAnimationFrame(animatePetals);
+    }
+
+    animatePetals();
+  </script>
+</body>
+</html>
